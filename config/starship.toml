@@ -1,0 +1,38 @@
+# ~/.config/starship.toml
+
+# Get editor completions based on the config schema
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+$username\
+$hostname\
+$shlvl\
+$directory\
+$git_branch\
+$git_commit\
+$git_state\
+$git_status\
+$docker_context\
+$python\
+$ruby\
+$line_break\
+$status\
+$character"""
+
+[git_branch]
+symbol = "\uf418 "
+style = "bold fg:#F05032"
+
+[gcloud]
+disabled = true
+
+[aws]
+disabled = true
+
+[os]
+disabled = true
+
+[username]
+style_user = "bold fg:#F5C643"
+show_always = true
+aliases = { "riccardopressiani" = "Riccardo", "rpressiani" = "Riccardo" }

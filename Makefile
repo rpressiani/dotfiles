@@ -8,7 +8,9 @@ help: # Show help for each of the Makefile recipes.
 
 macos: core-macos packages  # Init MacOS
 
-core-macos: shell brew # Install MacOS core
+raspi: shell-raspi
+
+core-macos: shell-macos brew # Install MacOS core
 
 oh-my-zsh: # Install oh-my-zsh
 	if [ ! -d ~/.oh-my-zsh ]; then \
@@ -17,11 +19,11 @@ oh-my-zsh: # Install oh-my-zsh
 		rm install.sh; \
 	fi
 
-starship: # Create starship links
+starship-config: # Create starship links
 	mkdir -p ~/.config
 	ln -sfv $(DOTFILES_DIR)/config/starship.toml ~/.config/starship.toml
 	
-shell: oh-my-zsh starship # Create zsh links
+shell-macos: oh-my-zsh starship-config # Create zsh links
 	mkdir -p ~/.config/zsh
 	ln -sfv $(DOTFILES_DIR)/.zshrc ~/.zshrc
 	ln -sfv $(DOTFILES_DIR)/config/zsh/aliases.zsh ~/.config/zsh/aliases.zsh
@@ -40,3 +42,9 @@ cask-apps: brew # Install casks
 brew-bundle: # Dump brews and casks
 	brew bundle dump -f --brews --taps --file Brewfile
 	brew bundle dump -f --brews --cask --file Caskfile
+
+starship-install:
+	curl -sS https://starship.rs/install.sh && sudo sh install.sh -y && rm install.sh
+
+shell-raspi: starship-install starship-config
+	ln -sfv $(DOTFILES_DIR)/raspberry/.bashrc ~/.bashrc	

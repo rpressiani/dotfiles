@@ -39,7 +39,7 @@ brew: # Install brew executable
 packages-macos: brew-packages cask-apps # Install packages
 
 packages-raspi:
-	sudo apt install $(cat $(DOTFILES_DIR)/raspberry/pkglist) -y
+	sudo apt install $(shell cat $(DOTFILES_DIR)/raspberry/pkglist) -y
 
 brew-packages: brew # Install brews
 	brew bundle --file=$(DOTFILES_DIR)/install/Brewfile || true

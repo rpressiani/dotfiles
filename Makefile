@@ -6,9 +6,16 @@ default: help
 help: # Show help for each of the Makefile recipes.
 	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
 
-macos: core-macos packages  # Init MacOS
+macos: core-macos packages-macos  # Init MacOS
 
-core-macos: shell brew # Install MacOS core
+raspi: core-raspi packages-raspi ssh-port # Init raspi
+
+core-macos: shell-macos brew # Install MacOS core
+
+core-raspi: shell-raspi # Install raspi core
+	sudo apt update
+	sudo apt upgrade -y
+	sudo apt dist-upgrade -f -y
 
 oh-my-zsh: # Install oh-my-zsh
 	if [ ! -d ~/.oh-my-zsh ]; then \
@@ -17,11 +24,11 @@ oh-my-zsh: # Install oh-my-zsh
 		rm install.sh; \
 	fi
 
-starship: # Create starship links
+starship-config: # Create starship links
 	mkdir -p ~/.config
 	ln -sfv $(DOTFILES_DIR)/config/starship.toml ~/.config/starship.toml
-	
-shell: oh-my-zsh starship # Create zsh links
+
+shell-macos: oh-my-zsh starship-config # Init macOS shell
 	mkdir -p ~/.config/zsh
 	ln -sfv $(DOTFILES_DIR)/.zshrc ~/.zshrc
 	ln -sfv $(DOTFILES_DIR)/config/zsh/aliases.zsh ~/.config/zsh/aliases.zsh
@@ -29,7 +36,10 @@ shell: oh-my-zsh starship # Create zsh links
 brew: # Install brew executable
 	command -v brew || curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh | bash
 
-packages: brew-packages cask-apps # Install packages
+packages-macos: brew-packages cask-apps # Install packages
+
+packages-raspi:
+	sudo apt install $(shell cat $(DOTFILES_DIR)/raspberry/pkglist) -y
 
 brew-packages: brew # Install brews
 	brew bundle --file=$(DOTFILES_DIR)/install/Brewfile || true
@@ -40,3 +50,15 @@ cask-apps: brew # Install casks
 brew-bundle: # Dump brews and casks
 	brew bundle dump -f --brews --taps --file Brewfile
 	brew bundle dump -f --brews --cask --file Caskfile
+
+starship-install: # Install starship
+	curl -fsSLO https://starship.rs/install.sh && sudo sh install.sh -y && rm install.sh
+
+shell-raspi: starship-install starship-config # Init raspi shell
+	ln -sfv $(DOTFILES_DIR)/raspberry/.bashrc ~/.bashrc	
+
+ssh-port: packages-raspi # Change rapsi SSH port
+	[ ! -z "${RASPI_SSH_PORT}" ] || echo 'RASPI_SSH_PORT not set' || exit 1
+	sudo sed -i 's/#Port 22/Port ${RASPI_SSH_PORT}/g' /etc/ssh/sshd_config
+	sudo ufw allow ${RASPI_SSH_PORT}/tcp
+	sudo service ssh restart

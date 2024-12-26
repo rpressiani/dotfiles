@@ -110,3 +110,5 @@ export PATH="/Users/riccardo/.rd/bin:$PATH"
 ### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
 
 eval "$(starship init zsh)"
+
+export GPG_TTY=$(tty)

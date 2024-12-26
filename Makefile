@@ -8,14 +8,23 @@ help: # Show help for each of the Makefile recipes.
 
 macos: core-macos packages-macos  # Init MacOS
 
-raspi: core-raspi packages-raspi ssh-port # Init raspi
+raspi: core-raspi packages-raspi shell-raspi ssh-port # Init raspi
 
 core-macos: shell-macos brew # Install MacOS core
 
-core-raspi: shell-raspi # Install raspi core
+core-raspi: # Install raspi core
 	sudo apt update
 	sudo apt upgrade -y
 	sudo apt dist-upgrade -f -y
+
+shell-macos: oh-my-zsh starship-config # Init macOS shell
+	mkdir -p ~/.config/zsh
+	ln -sfv $(DOTFILES_DIR)/.zshrc ~/.zshrc
+	ln -sfv $(DOTFILES_DIR)/config/zsh/aliases.zsh ~/.config/zsh/aliases.zsh
+
+shell-raspi: oh-my-zsh starship-install starship-config # Init raspi shell
+	sudo chsh -s /usr/bin/zsh pi
+	ln -sfv $(DOTFILES_DIR)/raspberry/.zshrc ~/.zshrc
 
 oh-my-zsh: # Install oh-my-zsh
 	if [ ! -d ~/.oh-my-zsh ]; then \
@@ -24,22 +33,20 @@ oh-my-zsh: # Install oh-my-zsh
 		rm install.sh; \
 	fi
 
+starship-install: # Install starship
+	curl -fsSLO https://starship.rs/install.sh && sudo sh install.sh -y && rm install.sh
+
 starship-config: # Create starship links
 	mkdir -p ~/.config
 	ln -sfv $(DOTFILES_DIR)/config/starship.toml ~/.config/starship.toml
 
-shell-macos: oh-my-zsh starship-config # Init macOS shell
-	mkdir -p ~/.config/zsh
-	ln -sfv $(DOTFILES_DIR)/.zshrc ~/.zshrc
-	ln -sfv $(DOTFILES_DIR)/config/zsh/aliases.zsh ~/.config/zsh/aliases.zsh
+packages-macos: brew-packages cask-apps # Install packages
+
+packages-raspi: docker
+	sudo apt install $(shell cat $(DOTFILES_DIR)/raspberry/pkglist) -y
 
 brew: # Install brew executable
 	command -v brew || curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh | bash
-
-packages-macos: brew-packages cask-apps # Install packages
-
-packages-raspi:
-	sudo apt install $(shell cat $(DOTFILES_DIR)/raspberry/pkglist) -y
 
 brew-packages: brew # Install brews
 	brew bundle --file=$(DOTFILES_DIR)/install/Brewfile || true
@@ -48,17 +55,14 @@ cask-apps: brew # Install casks
 	brew bundle --file=$(DOTFILES_DIR)/install/Caskfile || true
 
 brew-bundle: # Dump brews and casks
-	brew bundle dump -f --brews --taps --file Brewfile
-	brew bundle dump -f --brews --cask --file Caskfile
-
-starship-install: # Install starship
-	curl -fsSLO https://starship.rs/install.sh && sudo sh install.sh -y && rm install.sh
-
-shell-raspi: starship-install starship-config # Init raspi shell
-	ln -sfv $(DOTFILES_DIR)/raspberry/.bashrc ~/.bashrc	
+	brew bundle dump -f --brews --taps --file $(DOTFILES_DIR)/install/Brewfile
+	brew bundle dump -f --brews --cask --file $(DOTFILES_DIR)/install/Caskfile
 
 ssh-port: packages-raspi # Change rapsi SSH port
 	[ ! -z "${RASPI_SSH_PORT}" ] || echo 'RASPI_SSH_PORT not set' || exit 1
 	sudo sed -i 's/#Port 22/Port ${RASPI_SSH_PORT}/g' /etc/ssh/sshd_config
 	sudo ufw allow ${RASPI_SSH_PORT}/tcp
 	sudo service ssh restart
+
+docker:
+	command -v docker || (curl -sSL https://get.docker.com | sh && sudo usermod -aG docker ${USER})

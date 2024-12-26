@@ -56,7 +56,7 @@ cask-apps: brew # Install casks
 
 brew-bundle: # Dump brews and casks
 	brew bundle dump -f --brews --taps --file $(DOTFILES_DIR)/install/Brewfile
-	brew bundle dump -f --brews --cask --file $(DOTFILES_DIR)/install/Caskfile
+	brew bundle dump -f --cask --file $(DOTFILES_DIR)/install/Caskfile
 
 ssh-port: packages-raspi # Change rapsi SSH port
 	[ ! -z "${RASPI_SSH_PORT}" ] || echo 'RASPI_SSH_PORT not set' || exit 1

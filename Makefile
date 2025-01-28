@@ -1,5 +1,10 @@
 DOTFILES_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
+COLOR_GREEN=\033[0;32m
+COLOR_RED=\033[0;31m
+COLOR_BLUE=\033[0;34m
+END_COLOR=\033[0m
+
 default: help
 
 .PHONY: help
@@ -8,7 +13,10 @@ help: # Show help for each of the Makefile recipes.
 
 macos: core-macos packages-macos  # Init MacOS
 
-raspi: core-raspi packages-raspi shell-raspi ssh-port # Init raspi
+raspi: raspi-check-prereq core-raspi packages-raspi shell-raspi ssh-port # Init raspi
+
+raspi-check-prereq:
+	test -n "$(RASPI_SSH_PORT)" || (echo "$(COLOR_RED)RASPI_SSH_PORT not set$(END_COLOR)" ; exit 1)
 
 core-macos: shell-macos brew # Install MacOS core
 
@@ -59,9 +67,12 @@ brew-bundle: # Dump brews and casks
 	brew bundle dump -f --cask --file $(DOTFILES_DIR)/install/Caskfile
 
 ssh-port: packages-raspi # Change rapsi SSH port
-	[ ! -z "${RASPI_SSH_PORT}" ] || echo 'RASPI_SSH_PORT not set' || exit 1
+	test -n "$(RASPI_SSH_PORT)" || (echo "$(COLOR_RED)RASPI_SSH_PORT not set$(END_COLOR)" ; exit 1)
 	sudo sed -i 's/#Port 22/Port ${RASPI_SSH_PORT}/g' /etc/ssh/sshd_config
+	sudo ufw default deny incoming
+	sudo ufw default allow outgoing
 	sudo ufw allow ${RASPI_SSH_PORT}/tcp
+	sudo ufw allow 6443/tcp
 	sudo service ssh restart
 
 docker:

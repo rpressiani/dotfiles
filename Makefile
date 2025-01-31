@@ -72,7 +72,7 @@ ssh-port: packages-raspi # Change rapsi SSH port
 	sudo ufw default deny incoming
 	sudo ufw default allow outgoing
 	sudo ufw allow ${RASPI_SSH_PORT}/tcp
-	sudo ufw allow 6443/tcp
+	sudo ufw enable
 	sudo service ufw restart
 	sudo service ssh restart
 

@@ -112,3 +112,4 @@ export PATH="/Users/riccardo/.rd/bin:$PATH"
 eval "$(starship init zsh)"
 
 export GPG_TTY=$(tty)
+export KUBECONFIG=~/.kube/config
